@@ -25,6 +25,7 @@ if(ENABLE_JEMALLOC_BUILD)
   add_compile_definitions(USE_LIBC=0)
 
   find_package(jemalloc REQUIRED)
+  include_directories(${JEMALLOC_INCLUDE_DIR})
 endif()
 
 include_directories(
@@ -46,7 +47,6 @@ add_library(rediscc STATIC
 )
 
 if(ENABLE_JEMALLOC_BUILD)
-  add_dependencies(rediscc jemalloc)
   target_link_libraries(rediscc PRIVATE ${JEMALLOC_LIBRARY})
 endif()
 

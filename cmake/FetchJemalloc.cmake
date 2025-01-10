@@ -1,13 +1,36 @@
 include(ExternalProject)
 
 function(fetch_jemalloc jemlloc_path)
-  ExternalProject_Add(jemalloc
-    PREFIX ${CMAKE_BINARY_DIR}/deps/jemalloc
-    SOURCE_DIR ${jemlloc_path}
-    CONFIGURE_COMMAND ${jemlloc_path}/autogen.sh &&
-        ${jemlloc_path}/configure --prefix=${CMAKE_BINARY_DIR}/deps/jemalloc --with-jemalloc-prefix=je_
-    BUILD_COMMAND make -j4
-    INSTALL_COMMAND make install
-    BUILD_IN_SOURCE 1
-  )
+  if(NOT EXISTS ${CMAKE_BINARY_DIR}/deps/jemalloc)
+    set(JEMALLOC_SOURCE_DIR ${jemlloc_path})
+    execute_process(
+      COMMAND ${JEMALLOC_SOURCE_DIR}/autogen.sh
+      WORKING_DIRECTORY ${JEMALLOC_SOURCE_DIR}
+    )
+
+    execute_process(
+      COMMAND ${JEMALLOC_SOURCE_DIR}/configure
+        --prefix=${CMAKE_BINARY_DIR}/deps/jemalloc 
+        --with-jemalloc-prefix=je_
+      WORKING_DIRECTORY ${JEMALLOC_SOURCE_DIR}
+    )
+
+    execute_process(
+      COMMAND make -j4
+      WORKING_DIRECTORY ${JEMALLOC_SOURCE_DIR}
+    )
+
+    execute_process(
+      COMMAND make install
+      WORKING_DIRECTORY ${JEMALLOC_SOURCE_DIR}
+    )
+
+    execute_process(
+      COMMAND git clean -xdf
+      WORKING_DIRECTORY ${JEMALLOC_SOURCE_DIR}
+    )
+
+    set(JEMALLOC_INCLUDE_DIR ${CMAKE_BINARY_DIR}/deps/jemalloc/include)
+    set(JEMALLOC_LIBRARY_DIR ${CMAKE_BINARY_DIR}/deps/jemalloc/lib)
+  endif()
 endfunction()
