@@ -41,9 +41,10 @@ static __thread long           my_thread_index    = -1;
  * 避免伪共享问题。
  */
 struct used_memory_entry {
-  std::atomic_int64_t used_memory;                     ///< 当前线程的内存使用量
-  int64_t             padding[ CACHE_LINE_SIZE
-                   - sizeof( int64_t ) ];  ///< 填充数组，确保结构体大小为缓存行大小的整数倍
+  std::atomic_int64_t used_memory;                         ///< 当前线程的内存使用量
+
+  int64_t padding[ CACHE_LINE_SIZE - sizeof( int64_t ) ];  ///< 填充数组
+                                                           ///< 确保结构体大小为缓存行大小的整数倍
 };
 
 [[gnu::aligned( CACHE_LINE_SIZE )]]
@@ -238,6 +239,27 @@ void xfree( void* ptr ) {
   if ( ptr == nullptr ) return;
   update_xmalloc_stat_free( xmalloc_size( ptr ) );
   free( ptr );
+}
+
+/**
+ * @author chenmiao (chenmiao.ku@gmail.com)
+ * @date 2025-01-11
+ * @brief 分配指定大小的内存并返回实际可用的内存大小。
+ *
+ * 该函数用于分配指定大小的内存，并在分配失败时调用内存分配失败处理函数。
+ * 如果分配成功，返回分配的内存指针，并可选地返回实际可用的内存大小。
+ *
+ * @param [in] size 请求分配的内存大小
+ * @param [out] usable 可选参数，用于返回实际可用的内存大小
+ * @return void* 返回分配的内存指针，如果分配失败则调用 `xmalloc_oom_handler`
+ */
+void* xmalloc_usable( size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  void*  ptr         = try_xmalloc_usable_internal( size, &usable_size );
+  if ( !ptr ) xmalloc_oom_handler( size );
+  ptr = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
+  return ptr;
 }
 
 /**
