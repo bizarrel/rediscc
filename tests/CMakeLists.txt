@@ -7,6 +7,14 @@ file(MAKE_DIRECTORY ${TESTS_OUTPUT_DIR})
 
 file(GLOB_RECURSE TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
+find_program(VALGRIND_EXECUTABLE valgrind)
+
+if(VALGRIND_EXECUTABLE)
+    message(STATUS "Valgrind found: ${VALGRIND_EXECUTABLE}")
+else()
+    message(WARNING "Valgrind not found!")
+endif()
+
 foreach(TEST_FILE ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
@@ -20,5 +28,8 @@ foreach(TEST_FILE ${TEST_SOURCES})
     set_target_properties(${TARGET_NAME} PROPERTIES 
         RUNTIME_OUTPUT_DIRECTORY ${TESTS_OUTPUT_DIR})
 
-    add_test(NAME ${TARGET_NAME} COMMAND ${TARGET_NAME})
+    add_test(
+        NAME ${TARGET_NAME} 
+        COMMAND valgrind --leak-check=full --track-origins=yes --error-exitcode=1
+            ${TARGET_NAME} 2>&1 | tee ${CMAKE_BINARY_DIR}/valgrind_output.log)
 endforeach()
