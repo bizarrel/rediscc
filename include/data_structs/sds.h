@@ -251,7 +251,7 @@ private:
     sds_assert( buf_ != nullptr, "__make_room() failed: xrealloc_usable()" );
     sds_assert( usable <= max_value, "__make_room() usable > max_value({})", max_value );
 
-    alloc_ = usable - 1;
+    alloc_ = usable;
     return buf_;
   }
 };

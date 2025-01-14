@@ -74,7 +74,7 @@ TEST( SDS, CatLen ) {
   sds_8t s( "simple" );
   s.catlen( "123", 3 );
   EXPECT_EQ( s.length(), strlen( "simple123" ) );
-  EXPECT_EQ( s.get_alloc(), strlen( "simple123" ) + 1 );
+  EXPECT_EQ( s.get_alloc(), 32 );
 }
 
 GTEST_API_ int main( int argc, char** argv ) {

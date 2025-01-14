@@ -161,6 +161,15 @@ static inline void* try_xrealloc_usable_internal( void* ptr, size_t size, size_t
   }
 
   old_size = xmalloc_size( ptr );
+  /**
+   * `je_realloc`在分配内存时，通常会按 2 的幂次倍数分配
+   *    - 对于 小对象（具体大小取决于 Jemalloc 的配置，通常是 1 KB
+   * 或以下），内存大小会被对齐到特定的粒度（如 8 字节或 16 字节）
+   *    - 对于 中等大小的对象，内存大小会对齐到更大的粒度，通常是 2 的幂次倍数（例如 32 字节、64
+   * 字节、128 字节）
+   *    - 对于 大对象（大于某个阈值，例如 1 MB），Jemalloc 会使用页粒度分配，粒度通常是 4
+   * KB（或者更大的系统页大小）
+   */
   new_ptr  = realloc( ptr, size );
   if ( new_ptr == nullptr ) {
     if ( usable ) *usable = 0;
@@ -168,10 +177,9 @@ static inline void* try_xrealloc_usable_internal( void* ptr, size_t size, size_t
   }
 
   update_xmalloc_stat_free( old_size );
-  size = xmalloc_size( ptr );
+  size = xmalloc_size( new_ptr );
   update_xmalloc_stat_alloc( size );
   if ( usable ) *usable = size;
-  REDISCC_INFO( "xmalloc realloc usable size: {0}", usable ? *usable : 0 );
 
   return new_ptr;
 }
@@ -242,7 +250,7 @@ void* xrealloc( void* ptr, size_t size ) {
  */
 void* xrealloc_usable( void* ptr, size_t size, size_t* usable ) {
   size_t usable_size = 0;
-  ptr                = try_xrealloc_usable_internal( ptr, size, &usable_size );
+  ptr                = try_xrealloc_usable( ptr, size, &usable_size );
   if ( !ptr && size != 0 ) xmalloc_oom_handler( size );
   ptr = extend_to_usable( ptr, usable_size );
   if ( usable ) *usable = usable_size;
@@ -299,6 +307,14 @@ void* xmalloc_usable( size_t size, size_t* usable ) {
 void* try_xmalloc_usable( size_t size, size_t* usable ) {
   size_t usable_size = 0;
   void*  ptr         = try_xmalloc_usable_internal( size, &usable_size );
+  ptr                = extend_to_usable( ptr, usable_size );
+  if ( usable ) *usable = usable_size;
+  return ptr;
+}
+
+void* try_xrealloc_usable( void* ptr, size_t size, size_t* usable ) {
+  size_t usable_size = 0;
+  ptr                = try_xrealloc_usable_internal( ptr, size, &usable_size );
   ptr                = extend_to_usable( ptr, usable_size );
   if ( usable ) *usable = usable_size;
   return ptr;
