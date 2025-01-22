@@ -33,23 +33,31 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <utility>
+
+enum class encoding_type : uint8_t {
+  ENC_INT16,
+  ENC_INT32,
+  ENC_INT64,
+};
 
 typedef struct intset {
-  uint32_t encoding;
-  uint32_t length;
-  int8_t   contents[];
+  encoding_type encoding;
+  uint32_t      length;
+  int8_t        contents[];
 } intset;
 
-intset*  intsetNew( void );
-intset*  intsetAdd( intset* is, int64_t value, uint8_t* success );
-intset*  intsetRemove( intset* is, int64_t value, int* success );
-uint8_t  intsetFind( intset* is, int64_t value );
-int64_t  intsetRandom( intset* is );
-int64_t  intsetMax( intset* is );
-int64_t  intsetMin( intset* is );
-uint8_t  intsetGet( intset* is, uint32_t pos, int64_t* value );
-uint32_t intsetLen( const intset* is );
-size_t   intsetBlobLen( intset* is );
-int      intsetValidateIntegrity( const unsigned char* is, size_t size, int deep );
+std::optional< intset* >                    intsetNew( void );
+std::pair< bool, std::optional< intset* > > intsetAdd( intset* is, int64_t value );
+std::pair< bool, std::optional< intset* > > intsetRemove( intset* is, int64_t value );
+bool                                        intsetFind( intset* is, int64_t value );
+int64_t                                     intsetRandom( intset* is );
+int64_t                                     intsetMax( intset* is );
+int64_t                                     intsetMin( intset* is );
+std::pair< bool, std::optional< int64_t > > intsetGet( intset* is, uint32_t pos );
+constexpr uint32_t                          intsetLen( const intset* is );
+constexpr size_t                            intsetBlobLen( intset* is );
+bool intsetValidateIntegrity( const unsigned char* p, size_t size, int deep );
 
 #endif  //! REDISCC_DATA_STRUCTURE_INT_SET_H
