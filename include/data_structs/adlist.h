@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 
 typedef struct listNode {
   struct listNode* prev;
@@ -20,9 +21,14 @@ typedef struct listNode {
   void*            value;
 } listNode;
 
+enum class IterDirection {
+  START_HEAD = 0,
+  START_TAIL = 1,
+};
+
 typedef struct listIter {
-  listNode* next;
-  int       direction;
+  listNode*     next;
+  IterDirection direction;
 } listIter;
 
 using func_dup   = std::function< void*( void* ) >;
@@ -52,27 +58,28 @@ inline func_free    list_get_free_method( const adlist* l ) { return l->free; }
 inline func_match   list_get_match_method( const adlist* l ) { return l->match; }
 
 /* Prototypes */
-adlist*   listCreate( void );
-void      listRelease( adlist* adlist );
-void      listEmpty( adlist* adlist );
-adlist*   listAddNodeHead( adlist* adlist, void* value );
-adlist*   listAddNodeTail( adlist* adlist, void* value );
-adlist*   listInsertNode( adlist* adlist, listNode* old_node, void* value, int after );
-void      listDelNode( adlist* adlist, listNode* node );
-listIter* listGetIterator( adlist* adlist, int direction );
-listNode* listNext( listIter* iter );
-void      listReleaseIterator( listIter* iter );
-adlist*   listDup( adlist* orig );
-listNode* listSearchKey( adlist* adlist, void* key );
-listNode* listIndex( adlist* adlist, long index );
-void      listRewind( adlist* adlist, listIter* li );
-void      listRewindTail( adlist* adlist, listIter* li );
-void      listRotateTailToHead( adlist* adlist );
-void      listRotateHeadToTail( adlist* adlist );
-void      listJoin( adlist* l, adlist* o );
-void      listInitNode( listNode* node, void* value );
-void      listLinkNodeHead( adlist* adlist, listNode* node );
-void      listLinkNodeTail( adlist* adlist, listNode* node );
-void      listUnlinkNode( adlist* adlist, listNode* node );
+std::optional< adlist* > listCreate( void );
+void                     listRelease( adlist* adlist );
+void                     listEmpty( adlist* adlist );
+std::optional< adlist* > listAddNodeHead( adlist* adlist, void* value );
+std::optional< adlist* > listAddNodeTail( adlist* adlist, void* value );
+std::optional< adlist* >
+     listInsertNode( adlist* adlist, listNode* old_node, void* value, bool after );
+void listDelNode( adlist* adlist, listNode* node );
+std::optional< listIter* > listGetIterator( adlist* adlist, int direction );
+std::optional< listNode* > listNext( listIter* iter );
+void                       listReleaseIterator( listIter* iter );
+std::optional< adlist* >   listDup( adlist* orig );
+std::optional< listNode* > listSearchKey( adlist* adlist, void* key );
+std::optional< listNode* > listIndex( adlist* adlist, long index );
+void                       listRewind( adlist* adlist, listIter* li );
+void                       listRewindTail( adlist* adlist, listIter* li );
+void                       listRotateTailToHead( adlist* adlist );
+void                       listRotateHeadToTail( adlist* adlist );
+void                       listJoin( adlist* l, adlist* o );
+void                       listInitNode( listNode* node, void* value );
+void                       listLinkNodeHead( adlist* adlist, listNode* node );
+void                       listLinkNodeTail( adlist* adlist, listNode* node );
+void                       listUnlinkNode( adlist* adlist, listNode* node );
 
 #endif  //! REDISCC_DATA_STRUCTURE_ADLIST_H
